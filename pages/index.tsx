@@ -1,18 +1,50 @@
-import { useEffect, useRef } from "react";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import Planet from "../lib/planet"; // Assuming Planet is typed correctly
+import Planet from "../lib/planet";
 
+// Constants
 const EARTH_YEAR = 2 * Math.PI * (1 / 60) * (1 / 60);
-const scalingFactor = 0.8;
+const MOON_ORBIT_SPEED = EARTH_YEAR * 6; // Moon's orbit speed around Earth
+const scalingFactor = 1;
+
+// Types for API responses
+interface NearEarthObject {
+  id: string;
+  name: string;
+  // Add other relevant fields as needed from the API
+}
+
+interface FireballData {
+  date: string;
+  energy: number;
+  impact_e: number;
+  // Add other relevant fields as needed from the API
+}
+
+interface PlanetData {
+  name: string;
+  size: number;
+  texture: string;
+  semiMajorAxis: number;
+  semiMinorAxis: number;
+  speed: number;
+  rotationSpeed: number;
+}
 
 export default function Home() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null); // Reference for DOM container
+  const [nearEarthObjects, setNearEarthObjects] = useState<NearEarthObject[]>(
+    [],
+  ); // State for Near-Earth objects
+  const [fireballData, setFireballData] = useState<FireballData[]>([]); // State for Fireball data
 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Create scene, camera, and renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -32,26 +64,28 @@ export default function Home() {
     renderer.setPixelRatio(window.devicePixelRatio);
     containerRef.current.appendChild(renderer.domElement);
 
+    // Handle window resize
     const handleResize = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.clientWidth;
-        const height = containerRef.current.clientHeight;
+      if (!containerRef.current) return;
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
 
-        renderer.setSize(width, height);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-      }
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     };
 
     window.addEventListener("resize", handleResize);
 
+    // Camera orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
 
     controls.minDistance = 50;
-    controls.maxDistance = 300;
+    controls.maxDistance = 350;
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
 
+    // Create the Sun
     const sunGeometry = new THREE.SphereGeometry(
       Math.log(696.34) * scalingFactor,
     );
@@ -62,7 +96,8 @@ export default function Home() {
 
     solarSystem.add(sunMesh);
 
-    const planetsData = [
+    // Data for planets
+    const planetsData: PlanetData[] = [
       {
         name: "Mercury",
         size: Math.log(2.4405) * scalingFactor,
@@ -146,8 +181,12 @@ export default function Home() {
       rotationSpeed: number;
     }[] = [];
 
+    let earthMesh: THREE.Mesh | null = null;
+    let moonMesh: THREE.Mesh | null = null;
+
+    // Create planets
     planetsData.forEach((planetData) => {
-      const planet = new Planet(planetData.size, 32, planetData.texture); // Ensure Planet class is properly typed
+      const planet = new Planet(planetData.size, 32, planetData.texture);
       const planetMesh = planet.getMesh();
 
       planetMeshes.push({
@@ -156,25 +195,62 @@ export default function Home() {
         semiMinorAxis: planetData.semiMinorAxis,
         speed: planetData.speed,
         angle: Math.random() * Math.PI * 2,
-        rotationSpeed: planetData.rotationSpeed, // Store the planet's rotation speed
+        rotationSpeed: planetData.rotationSpeed,
       });
       solarSystem.add(planetMesh);
+
+      if (planetData.name === "Earth") {
+        earthMesh = planetMesh;
+      }
     });
 
+    // Add solar system to the scene
     scene.add(solarSystem);
 
+    // Create the Moon
+    if (earthMesh) {
+      const moonGeometry = new THREE.SphereGeometry(
+        Math.log(1.737) * scalingFactor,
+      );
+      const moonTexture = new THREE.TextureLoader().load("moon.png");
+      const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
+
+      moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+
+      // Earth-Moon group
+      const earthMoonGroup = new THREE.Group();
+
+      earthMoonGroup.add(earthMesh);
+      earthMoonGroup.add(moonMesh);
+      solarSystem.add(earthMoonGroup);
+
+      moonMesh.position.set(5.5, 0, 0);
+    }
+
+    // Animation function
     const animate = () => {
       requestAnimationFrame(animate);
 
+      // Sun rotation
       sunMesh.rotation.y += 0.001;
 
+      // Update planet orbits
       planetMeshes.forEach((planet) => {
         planet.angle += planet.speed;
         planet.mesh.position.x = planet.semiMajorAxis * Math.cos(planet.angle);
         planet.mesh.position.z = planet.semiMinorAxis * Math.sin(planet.angle);
-        planet.mesh.rotation.y += planet.rotationSpeed; // Apply custom rotation speed
+        planet.mesh.rotation.y += 0.01;
       });
 
+      // Update Moon's orbit around Earth
+      if (moonMesh && earthMesh) {
+        let moonAngle = MOON_ORBIT_SPEED * 0.5;
+
+        moonMesh.position.x = earthMesh.position.x + 10 * Math.cos(moonAngle);
+        moonMesh.position.z = earthMesh.position.z + 10 * Math.sin(moonAngle);
+      }
+
+      // Render scene
       controls.update();
       renderer.render(scene, camera);
     };
@@ -189,11 +265,28 @@ export default function Home() {
     };
   }, []);
 
+  // Fetch Near-Earth objects and Fireball data
+  useEffect(() => {
+    axios
+      .get(
+        "https://api.nasa.gov/neo/rest/v1/feed?api_key=aB5ASTBsdKFPiiDjEMAIDaTu2aSY3m67fYqOOBuT",
+      )
+      .then((response) => setNearEarthObjects(response.data.near_earth_objects))
+      .catch((error) => console.error("Error fetching NEO data:", error));
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("https://ssd-api.jpl.nasa.gov/fireball.api")
+      .then((response) => setFireballData(response.data.data))
+      .catch((error) => console.error("Error fetching Fireball data:", error));
+  }, []);
+
   return (
     <div
       ref={containerRef}
       className="flex flex-col items-center justify-center"
-      style={{ width: "100%", height: "100vh" }}
+      style={{ width: "100%", height: "100vh", position: "relative" }}
     />
   );
 }
