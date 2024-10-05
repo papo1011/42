@@ -37,7 +37,8 @@ export default class Scene {
 
     this.scene = new THREE.Scene();
 
-    // const spaceTexture = new THREE.TextureLoader().load("space2.jpeg");
+    // const spaceTexture = new THREE.TextureLoader().load("background.jpg");
+
     // this.scene.background = spaceTexture;
 
     // specify a canvas which is already created in the HTML file and tagged by an id
