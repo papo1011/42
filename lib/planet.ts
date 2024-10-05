@@ -17,9 +17,11 @@ export default class Planet {
       const geometry = new THREE.SphereGeometry(this.radius);
       const texture = new THREE.TextureLoader().load(this.textureFile);
       const material = new THREE.MeshBasicMaterial({ map: texture });
+
       this.mesh = new THREE.Mesh(geometry, material);
       this.mesh.position.x += this.positionX;
     }
+
     return this.mesh;
   }
 }

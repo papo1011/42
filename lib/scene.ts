@@ -16,7 +16,7 @@ export default class Scene {
     scene: THREE.Scene,
     stats: Stats,
     controls: OrbitControls,
-    renderer: THREE.WebGLRenderer
+    renderer: THREE.WebGLRenderer,
   ) {
     this.fov = fov;
     this.scene = scene;
@@ -31,7 +31,7 @@ export default class Scene {
       this.fov,
       window.innerWidth / window.innerHeight,
       1,
-      1000
+      1000,
     );
     this.camera.position.z = 128;
 
