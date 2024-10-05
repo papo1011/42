@@ -2,19 +2,17 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import Planet from "../lib/planet"; // Assuming this is a TypeScript file or properly typed
+import Planet from "../lib/planet"; // Assuming Planet is typed correctly
 
 const EARTH_YEAR = 2 * Math.PI * (1 / 60) * (1 / 60);
 const scalingFactor = 0.8;
 
 export default function Home() {
-  // Define containerRef with the correct type (HTMLDivElement or null)
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return; // Immediately return if the reference is unavailable
+    if (!containerRef.current) return;
 
-    // Create the scene, camera, and renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -34,7 +32,6 @@ export default function Home() {
     renderer.setPixelRatio(window.devicePixelRatio);
     containerRef.current.appendChild(renderer.domElement);
 
-    // Handle window resizing
     const handleResize = () => {
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
@@ -55,7 +52,6 @@ export default function Home() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
 
-    // Create the Sun
     const sunGeometry = new THREE.SphereGeometry(
       Math.log(696.34) * scalingFactor,
     );
@@ -74,6 +70,7 @@ export default function Home() {
         semiMajorAxis: 20,
         semiMinorAxis: 15,
         speed: EARTH_YEAR * 4,
+        rotationSpeed: 0.06, // Custom rotation speed for Mercury
       },
       {
         name: "Venus",
@@ -82,6 +79,7 @@ export default function Home() {
         semiMajorAxis: 35,
         semiMinorAxis: 25,
         speed: EARTH_YEAR * 2,
+        rotationSpeed: 0.003, // Custom rotation speed for Venus
       },
       {
         name: "Earth",
@@ -90,6 +88,7 @@ export default function Home() {
         semiMajorAxis: 50,
         semiMinorAxis: 40,
         speed: EARTH_YEAR,
+        rotationSpeed: 0.03, // Custom rotation speed for Earth
       },
       {
         name: "Mars",
@@ -98,6 +97,7 @@ export default function Home() {
         semiMajorAxis: 70,
         semiMinorAxis: 55,
         speed: EARTH_YEAR * 0.5,
+        rotationSpeed: 0.024, // Custom rotation speed for Mars
       },
       {
         name: "Jupiter",
@@ -106,6 +106,7 @@ export default function Home() {
         semiMajorAxis: 100,
         semiMinorAxis: 80,
         speed: EARTH_YEAR * 0.1,
+        rotationSpeed: 0.09, // Custom rotation speed for Jupiter
       },
       {
         name: "Saturn",
@@ -114,6 +115,7 @@ export default function Home() {
         semiMajorAxis: 130,
         semiMinorAxis: 105,
         speed: EARTH_YEAR * 0.05,
+        rotationSpeed: 0.075, // Custom rotation speed for Saturn
       },
       {
         name: "Uranus",
@@ -122,6 +124,7 @@ export default function Home() {
         semiMajorAxis: 160,
         semiMinorAxis: 130,
         speed: EARTH_YEAR * 0.025,
+        rotationSpeed: 0.066, // Custom rotation speed for Uranus
       },
       {
         name: "Neptune",
@@ -130,14 +133,7 @@ export default function Home() {
         semiMajorAxis: 190,
         semiMinorAxis: 155,
         speed: EARTH_YEAR * 0.0125,
-      },
-      {
-        name: "Pluto",
-        size: Math.log(1.188) * scalingFactor,
-        texture: "pluto.jpg",
-        semiMajorAxis: 220,
-        semiMinorAxis: 180,
-        speed: EARTH_YEAR * 0.00625,
+        rotationSpeed: 0.054, // Custom rotation speed for Neptune
       },
     ];
 
@@ -147,10 +143,11 @@ export default function Home() {
       semiMinorAxis: number;
       speed: number;
       angle: number;
+      rotationSpeed: number;
     }[] = [];
 
     planetsData.forEach((planetData) => {
-      const planet = new Planet(planetData.size, 32, planetData.texture); // Make sure Planet is typed
+      const planet = new Planet(planetData.size, 32, planetData.texture); // Ensure Planet class is properly typed
       const planetMesh = planet.getMesh();
 
       planetMeshes.push({
@@ -159,6 +156,7 @@ export default function Home() {
         semiMinorAxis: planetData.semiMinorAxis,
         speed: planetData.speed,
         angle: Math.random() * Math.PI * 2,
+        rotationSpeed: planetData.rotationSpeed, // Store the planet's rotation speed
       });
       solarSystem.add(planetMesh);
     });
@@ -174,7 +172,7 @@ export default function Home() {
         planet.angle += planet.speed;
         planet.mesh.position.x = planet.semiMajorAxis * Math.cos(planet.angle);
         planet.mesh.position.z = planet.semiMinorAxis * Math.sin(planet.angle);
-        planet.mesh.rotation.y += 0.01;
+        planet.mesh.rotation.y += planet.rotationSpeed; // Apply custom rotation speed
       });
 
       controls.update();
@@ -186,7 +184,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("resize", handleResize);
       if (containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement); // Correctly typed
+        containerRef.current.removeChild(renderer.domElement);
       }
     };
   }, []);
