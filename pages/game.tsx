@@ -1,112 +1,101 @@
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { useState } from "react";
 
-const EARTH_YEAR = 2 * Math.PI * (1 / 60) * (1 / 60);
-const MOON_ORBIT_SPEED = EARTH_YEAR * 3; // Adjust speed for moon orbit
+export default function Game() {
+  const [result, setResult] = useState(""); // State for the coin flip result
+  const [message, setMessage] = useState(""); // Message to show if the user won or lost
+  const [userChoice, setUserChoice] = useState(""); // User's choice (heads or tails)
 
-export default function EarthMoonSystem() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  // Function to flip the coin
+  const flipCoin = (choice: string) => {
+    const outcomes = ["heads", "tails"];
+    const randomOutcome = outcomes[Math.floor(Math.random() * 2)]; // Randomly generate "heads" or "tails"
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+    setUserChoice(choice); // Store the user's choice
+    setResult(randomOutcome); // Store the flip result
 
-    // Create scene, camera, and renderer
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      2000,
-    );
-
-    camera.position.set(0, 50, 150); // Camera closer to Earth
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-
-    renderer.setSize(
-      containerRef.current.clientWidth,
-      containerRef.current.clientHeight,
-    );
-    renderer.setPixelRatio(window.devicePixelRatio);
-    containerRef.current.appendChild(renderer.domElement);
-
-    // Handle window resize
-    const handleResize = () => {
-      if (!containerRef.current) return;
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
-
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    // Camera controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
-
-    // Earth creation
-    const earthGeometry = new THREE.SphereGeometry(6.3781, 64, 64);
-    const earthTexture = new THREE.TextureLoader().load("earth.jpeg");
-    const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
-    const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
-
-    scene.add(earthMesh);
-
-    // Moon creation
-    const moonGeometry = new THREE.SphereGeometry(1.737, 64, 64);
-    const moonTexture = new THREE.TextureLoader().load("moon.png");
-    const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
-    const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
-
-    scene.add(moonMesh);
-
-    // Moon orbit distance
-    const moonDistance = 384;
-    let moonAngle = 0;
-
-    // Animation loop
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      // Earth rotation
-      earthMesh.rotation.y += 0.01; // Rotate Earth around its axis
-
-      // Moon orbit around Earth
-      moonAngle += MOON_ORBIT_SPEED;
-      moonMesh.position.x =
-        earthMesh.position.x + moonDistance * Math.cos(moonAngle);
-      moonMesh.position.z =
-        earthMesh.position.z + moonDistance * Math.sin(moonAngle);
-
-      // Sincronizza la rotazione della Luna con la sua orbita attorno alla Terra
-      moonMesh.rotation.y = -moonAngle;
-
-      // Render the scene
-      controls.update();
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
-    };
-  }, []);
+    if (choice === randomOutcome) {
+      setMessage("Congratulations! You guessed correctly!"); // The user guessed correctly
+    } else {
+      setMessage("Sorry! You guessed wrong!"); // The user guessed wrong
+    }
+  };
 
   return (
     <div
-      ref={containerRef}
-      className="flex flex-col items-center justify-center"
-      style={{ width: "100%", height: "100vh", position: "relative" }}
-    />
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        backgroundColor: "black",
+        color: "white",
+        textAlign: "center",
+      }}
+    >
+      <h1>Coin Flip</h1>
+      <p>Choose Heads or Tails:</p>
+
+      <div style={{ margin: "20px" }}>
+        <button
+          style={{
+            padding: "10px 20px",
+            margin: "10px",
+            fontSize: "20px",
+            cursor: "pointer",
+            backgroundColor: "#32cd32",
+            border: "none",
+            borderRadius: "10px",
+          }}
+          onClick={() => flipCoin("heads")}
+        >
+          Heads
+        </button>
+        <button
+          style={{
+            padding: "10px 20px",
+            margin: "10px",
+            fontSize: "20px",
+            cursor: "pointer",
+            backgroundColor: "#ff4500",
+            border: "none",
+            borderRadius: "10px",
+          }}
+          onClick={() => flipCoin("tails")}
+        >
+          Tails
+        </button>
+      </div>
+
+      {result && (
+        <div style={{ marginTop: "20px" }}>
+          <h2>Result: {result.toUpperCase()}</h2>
+          <p>{message}</p>
+          <p>You chose: {userChoice.toUpperCase()}</p>
+        </div>
+      )}
+
+      {result && (
+        <button
+          style={{
+            marginTop: "20px",
+            padding: "10px 20px",
+            fontSize: "20px",
+            cursor: "pointer",
+            backgroundColor: "#0066ff",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+          }}
+          onClick={() => {
+            setResult(""); // Reset the result for a new game
+            setMessage("");
+            setUserChoice("");
+          }}
+        >
+          Play Again
+        </button>
+      )}
+    </div>
   );
 }
