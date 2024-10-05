@@ -1,5 +1,4 @@
-import axios from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -10,8 +9,6 @@ const MOON_ORBIT_SPEED = EARTH_YEAR * 3; // Velocità dell'orbita della Luna att
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement | null>(null); // Riferimento per il contenitore DOM
-  const [nearEarthObjects, setNearEarthObjects] = useState([]); // Stato per gli oggetti Near-Earth
-  const [fireballData, setFireballData] = useState([]); // Stato per i dati dei Fireball
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -64,12 +61,6 @@ export default function Home() {
       MIDDLE: THREE.MOUSE.DOLLY, // Tasto centrale per zoommare
       RIGHT: THREE.MOUSE.ROTATE, // Tasto destro per la rotazione
     };
-
-    // Personalizza il cursore del mouse per una manina carina
-    if (containerRef.current) {
-      containerRef.current.style.cursor =
-        "url('https://example.com/cute-hand-cursor.png'), auto";
-    }
 
     // Creazione del Sole
     const sunGeometry = new THREE.SphereGeometry(Math.log(696.34));
@@ -265,9 +256,6 @@ export default function Home() {
       moonMesh.position.set(6, 0, 0); // Posizione iniziale della Luna rispetto alla Terra
     }
 
-    // Variabile per l'angolo della Luna
-    let moonAngle = 0;
-
     // Funzione di animazione
     const animate = () => {
       requestAnimationFrame(animate);
@@ -280,8 +268,11 @@ export default function Home() {
         planet.angle += planet.speed;
         planet.mesh.position.x = planet.semiMajorAxis * Math.cos(planet.angle);
         planet.mesh.position.z = planet.semiMinorAxis * Math.sin(planet.angle);
-        planet.mesh.rotation.y += 0.01;
+        planet.mesh.rotation.y += planet.rotationSpeed;
       });
+
+      // Variabile per l'angolo della Luna
+      let moonAngle = 0;
 
       // Aggiorna l'orbita della Luna attorno alla Terra
       if (moonMesh && earthMesh) {
@@ -292,6 +283,8 @@ export default function Home() {
           earthMesh.position.x + moonDistance * Math.cos(moonAngle);
         moonMesh.position.z =
           earthMesh.position.z + moonDistance * Math.sin(moonAngle);
+        // Sincronizza la rotazione della Luna con la sua orbita attorno alla Terra
+        moonMesh.rotation.y = -moonAngle;
       }
 
       // Renderizza la scena
@@ -307,27 +300,6 @@ export default function Home() {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []);
-
-  // Ottieni i dati sugli oggetti Near-Earth e Fireball
-  useEffect(() => {
-    axios
-      .get(
-        "https://api.nasa.gov/neo/rest/v1/feed?api_key=aB5ASTBsdKFPiiDjEMAIDaTu2aSY3m67fYqOOBuT",
-      )
-      .then((response) => setNearEarthObjects(response.data.near_earth_objects))
-      .catch((error) =>
-        console.error("Errore durante il recupero dei dati NEO:", error),
-      );
-  }, []);
-
-  useEffect(() => {
-    axios
-      .get("https://ssd-api.jpl.nasa.gov/fireball.api")
-      .then((response) => setFireballData(response.data.data))
-      .catch((error) =>
-        console.error("Errore durante il recupero dei dati Fireball:", error),
-      );
   }, []);
 
   return (
