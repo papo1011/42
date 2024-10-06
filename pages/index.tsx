@@ -14,6 +14,9 @@ export default function Home() {
   const [showButton, setShowButton] = useState(false); // State to show or hide the button
   const [showMissionPrompt, setShowMissionPrompt] = useState(false); // State to show the mission prompt
   const [restart, setRestart] = useState(false); // State to manage scene restart
+  const [showInitialPopup, setShowInitialPopup] = useState(true); // State to show the initial popup
+  const [speedMultiplier, setSpeedMultiplier] = useState(1); // State to manage speed multiplier
+  const [showGuide, setShowGuide] = useState(false); // State to show the guide popup
   const router = useRouter(); // Use router for navigation
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export default function Home() {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
 
+    renderer.setClearColor(0x000000, 1); // Set background to black to avoid any lines or artifacts
     renderer.setSize(
       containerRef.current.clientWidth,
       containerRef.current.clientHeight,
@@ -62,6 +66,11 @@ export default function Home() {
     controls.enableDamping = true; // Adds damping effect to the controls
     controls.dampingFactor = 0.1;
 
+    // Add Ambient Light to the scene
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+
+    scene.add(ambientLight);
+
     // Create the Sun
     const sunGeometry = new THREE.SphereGeometry(Math.sqrt(696.34));
     const sunTexture = new THREE.TextureLoader().load("sun.jpeg");
@@ -75,18 +84,17 @@ export default function Home() {
     const starGeometry = new THREE.BufferGeometry();
     const starMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.5,
+      size: 1, // Increased size for better visibility
     });
     const starVertices = [];
 
-    for (let i = 0; i < 10000; i++) {
-      const x = THREE.MathUtils.randFloatSpread(2000);
-      const y = THREE.MathUtils.randFloatSpread(2000);
-      const z = THREE.MathUtils.randFloatSpread(2000);
+    for (let i = 0; i < 15000; i++) {
+      // Increased number of stars for better coverage
+      const x = THREE.MathUtils.randFloatSpread(4000);
+      const y = THREE.MathUtils.randFloatSpread(4000);
+      const z = THREE.MathUtils.randFloatSpread(4000);
 
-      if (Math.abs(x) > 50 && Math.abs(y) > 50 && Math.abs(z) > 50) {
-        starVertices.push(x, y, z);
-      }
+      starVertices.push(x, y, z);
     }
     starGeometry.setAttribute(
       "position",
@@ -246,7 +254,6 @@ export default function Home() {
       solarSystem.add(earthMoonGroup);
       moonMesh.position.set(Math.sqrt(138), 0, 0); // Initial position of the Moon
     }
-
     interface Asteroid {
       semiMajorAxis: number;
       semiMinorAxis: number;
@@ -309,19 +316,19 @@ export default function Home() {
       requestAnimationFrame(animate);
 
       // Rotation of the Sun
-      sunMesh.rotation.y += 0.001;
+      sunMesh.rotation.y += 0.001 * speedMultiplier;
 
       // Update the orbits of the planets
       planetMeshes.forEach((planet) => {
-        planet.angle += planet.speed; // Update the orbital angle
+        planet.angle += planet.speed * speedMultiplier; // Update the orbital angle
         planet.mesh.position.x = planet.semiMajorAxis * Math.cos(planet.angle);
         planet.mesh.position.z = planet.semiMinorAxis * Math.sin(planet.angle);
-        planet.mesh.rotation.y += planet.rotationSpeed; // Rotation of the planet
+        planet.mesh.rotation.y += planet.rotationSpeed * speedMultiplier; // Rotation of the planet
       });
 
       // Update the orbit of the Moon around the Earth
       if (moonMesh && earthMesh) {
-        moonAngle += MOON_ORBIT_SPEED;
+        moonAngle += MOON_ORBIT_SPEED * speedMultiplier;
         const moonDistance = Math.sqrt(138); // Distance of the Moon from the Earth
 
         moonMesh.position.x =
@@ -334,7 +341,7 @@ export default function Home() {
       for (let i = 0; i < numAsteroids; i++) {
         const asteroid = asteroidData[i];
 
-        asteroid.angle += asteroid.speed; // Update angle
+        asteroid.angle += asteroid.speed * speedMultiplier; // Update angle
         positions[i * 3] = asteroid.semiMajorAxis * Math.cos(asteroid.angle); // Update x
         positions[i * 3 + 2] =
           asteroid.semiMinorAxis * Math.sin(asteroid.angle); // Update z
@@ -346,20 +353,34 @@ export default function Home() {
         new THREE.BufferAttribute(positions, 3),
       );
 
-      controls.update(); // Update the camera controls
+      controls.update(); // Update the camera controls without resetting view
       renderer.render(scene, camera); // Render the scene
     };
 
     animate(); // Start the animation
 
+    // Event listener for key press to adjust speed
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "2") {
+        setSpeedMultiplier((prev) => prev * 2);
+      } else if (event.key === "3") {
+        setSpeedMultiplier((prev) => prev / 2);
+      } else if (event.key === "1") {
+        setShowGuide(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
     // Cleanup when the component unmounts
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", handleKeyDown);
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [restart]); // Added restart to restart the scene in case of rejection
+  }, [restart, speedMultiplier]); // Added restart and speedMultiplier to restart the scene in case of rejection
 
   // Show the button after 20 seconds
   useEffect(() => {
@@ -390,6 +411,82 @@ export default function Home() {
         background: "linear-gradient(to bottom, #000428, #004e92)", // Space gradient background
       }}
     >
+      {showInitialPopup && (
+        <div
+          style={{
+            position: "absolute",
+            top: "30%",
+            textAlign: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.8)", // Sfondo semi-trasparente per tema spaziale
+            padding: "40px",
+            borderRadius: "15px",
+            color: "white",
+            boxShadow: "0 0 30px rgba(255, 255, 255, 0.8)", // Effetto di bagliore spaziale
+            animation: "zoomIn 1s ease-in-out",
+          }}
+        >
+          <h1 style={{ fontSize: "28px", marginBottom: "20px" }}>
+            Welcome to the Solar System Simulation!
+          </h1>
+          <p style={{ fontSize: "16px", marginBottom: "20px" }}>
+            This simulation uses a simplified model of our solar system, with
+            sun, planets, moon and asteroid belt.The distances and sizes are
+            &quot;logaritmically scaled&quot; to fit within the visual scene.
+          </p>
+          <p style={{ fontSize: "16px", marginBottom: "20px" }}>
+            The{" "}
+            <u>
+              <a
+                href="https://threejs.org/"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Three.js
+              </a>
+            </u>{" "}
+            library is used to render the scene.
+          </p>
+          <p style={{ fontSize: "16px", marginBottom: "20px" }}>
+            <ul
+              style={{ listStyleType: "none", padding: 0, lineHeight: "1.8" }}
+            >
+              <li>
+                <strong>1</strong>: Display this guide.
+              </li>
+              <li>
+                <strong>2</strong>: Double the speed of the entire solar system
+                rotation and recenter the view.
+              </li>
+              <li>
+                <strong>3</strong>: Halve the speed of the entire solar system
+                rotation and recenter the view.
+              </li>
+              <li>
+                <strong>Right Mouse Button</strong>: Move around the scene.
+              </li>
+              <li>
+                <strong>Left Mouse Button</strong>: Rotate the view.
+              </li>
+            </ul>
+          </p>
+          <button
+            style={{
+              marginTop: "20px",
+              padding: "10px 20px",
+              backgroundColor: "#32cd32",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+              boxShadow: "0 0 20px rgba(50, 205, 50, 0.8)",
+            }}
+            onClick={() => setShowInitialPopup(false)}
+          >
+            OK
+          </button>
+        </div>
+      )}
+
       {showButton && !showMissionPrompt && (
         <button
           style={{
@@ -467,6 +564,58 @@ export default function Home() {
               NO
             </button>
           </div>
+        </div>
+      )}
+
+      {showGuide && (
+        <div
+          style={{
+            position: "absolute",
+            top: "20%",
+            left: "20%",
+            right: "20%",
+            textAlign: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.9)", // Dark background for the guide
+            padding: "30px",
+            borderRadius: "15px",
+            color: "white",
+            boxShadow: "0 0 30px rgba(255, 255, 255, 0.8)", // Glow effect for guide
+          }}
+        >
+          <ul style={{ listStyleType: "none", padding: 0, lineHeight: "1.8" }}>
+            <li>
+              <strong>1</strong>: Display this guide.
+            </li>
+            <li>
+              <strong>2</strong>: Double the speed of the entire solar system
+              rotation and recenter the view.
+            </li>
+            <li>
+              <strong>3</strong>: Halve the speed of the entire solar system
+              rotation and recenter the view.
+            </li>
+            <li>
+              <strong>Right Mouse Button</strong>: Move around the scene.
+            </li>
+            <li>
+              <strong>Left Mouse Button</strong>: Rotate the view.
+            </li>
+          </ul>
+          <button
+            style={{
+              marginTop: "20px",
+              padding: "10px 20px",
+              backgroundColor: "#32cd32",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+              boxShadow: "0 0 20px rgba(50, 205, 50, 0.8)",
+            }}
+            onClick={() => setShowGuide(false)}
+          >
+            Close Guide
+          </button>
         </div>
       )}
 
