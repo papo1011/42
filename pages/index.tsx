@@ -435,40 +435,35 @@ export default function Home() {
           </p>
           <p style={{ fontSize: "16px", marginBottom: "20px" }}>
             The{" "}
-            <u>
-              <a
-                href="https://threejs.org/"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Three.js
-              </a>
-            </u>{" "}
+            <a
+              href="https://threejs.org/"
+              rel="noopener noreferrer"
+              style={{ color: "#32cd32" }}
+              target="_blank"
+            >
+              Three.js
+            </a>{" "}
             library is used to render the scene.
           </p>
-          <p style={{ fontSize: "16px", marginBottom: "20px" }}>
-            <ul
-              style={{ listStyleType: "none", padding: 0, lineHeight: "1.8" }}
-            >
-              <li>
-                <strong>1</strong>: Display this guide.
-              </li>
-              <li>
-                <strong>2</strong>: Double the speed of the entire solar system
-                rotation and recenter the view.
-              </li>
-              <li>
-                <strong>3</strong>: Halve the speed of the entire solar system
-                rotation and recenter the view.
-              </li>
-              <li>
-                <strong>Right Mouse Button</strong>: Move around the scene.
-              </li>
-              <li>
-                <strong>Left Mouse Button</strong>: Rotate the view.
-              </li>
-            </ul>
-          </p>
+          <ul style={{ listStyleType: "none", padding: 0, lineHeight: "1.8" }}>
+            <li>
+              <strong>1</strong>: Display this guide.
+            </li>
+            <li>
+              <strong>2</strong>: Double the speed of the entire solar system
+              rotation and recenter the view.
+            </li>
+            <li>
+              <strong>3</strong>: Halve the speed of the entire solar system
+              rotation and recenter the view.
+            </li>
+            <li>
+              <strong>Right Mouse Button</strong>: Move around the scene.
+            </li>
+            <li>
+              <strong>Left Mouse Button</strong>: Rotate the view.
+            </li>
+          </ul>
           <button
             style={{
               marginTop: "20px",
