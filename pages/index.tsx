@@ -11,7 +11,6 @@ const MOON_ORBIT_SPEED = EARTH_YEAR * 3; // Speed of the Moon's orbit around Ear
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement | null>(null); // Reference to the DOM container for the Three.js canvas
-  const [showButton, setShowButton] = useState(false); // State to show or hide the button
   const [showMissionPrompt, setShowMissionPrompt] = useState(false); // State to show the mission prompt
   const [restart, setRestart] = useState(false); // State to manage scene restart
   const [showInitialPopup, setShowInitialPopup] = useState(true); // State to show the initial popup
@@ -382,20 +381,12 @@ export default function Home() {
     };
   }, [restart, speedMultiplier]); // Added restart and speedMultiplier to restart the scene in case of rejection
 
-  // Show the button after 20 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => setShowButton(true), 20000);
-
-    return () => clearTimeout(timer); // Clears the timer
-  }, []);
-
   // Function to handle the user's response
   const handleUserResponse = (response: string) => {
     if (response === "yes") {
       router.push("/game"); // Redirect to the /game page
     } else if (response === "no") {
       setShowMissionPrompt(false); // Hide the prompt
-      setShowButton(false); // Hide the button
       setRestart(true); // Restart the scene
     }
   };
@@ -482,48 +473,48 @@ export default function Home() {
         </div>
       )}
 
-      {showButton && !showMissionPrompt && (
-        <button
-          style={{
-            position: "absolute",
-            padding: "20px 40px",
-            backgroundColor: "#ff6347",
-            color: "white",
-            border: "3px solid #ffffff",
-            borderRadius: "15px",
-            fontSize: "24px",
-            cursor: "pointer",
-            boxShadow: "0 0 30px rgba(255, 255, 255, 0.8)", // Space glow effect
-            animation: "pulse 2s infinite", // Added animation for a pulsing effect
-            transition: "transform 0.3s ease-in-out",
-          }}
-          onClick={() => setShowMissionPrompt(true)} // Show the mission prompt
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")} // Hover effect
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          HELP, THE EARTH IS IN DANGER!
-        </button>
-      )}
+      <button
+        style={{
+          position: "fixed", // Changed to fixed to ensure it stays in place regardless of scrolling
+          top: "2%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "10px 20px",
+          backgroundColor: "#1a1a1a",
+          color: "#f8f8ff",
+          border: "3px solid #ffffff",
+          borderRadius: "15px",
+          fontSize: "18px",
+          cursor: "pointer",
+          boxShadow: "0 0 30px rgba(255, 255, 255, 0.8)", // Space glow effect
+          backgroundImage: "url('galactic_background.jpg')", // Background image for galactic theme
+          backgroundSize: "cover",
+          textShadow: "0 0 10px #ffffff",
+        }}
+        onClick={() => setShowMissionPrompt(true)}
+      >
+        {"DON'T PANIC!"}
+      </button>
 
       {showMissionPrompt && (
         <div
           style={{
-            position: "absolute",
-            top: "40%",
+            position: "fixed", // Ensure it stays centered regardless of screen size or scrolling
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
             textAlign: "center",
             backgroundColor: "white", // White background for the message
             padding: "40px", // Increased padding for a larger appearance
             borderRadius: "15px", // Rounded corners
             boxShadow: "0 0 30px rgba(0, 0, 0, 0.7)", // Shadow to make the message stand out
-            animation: "zoomIn 1s ease-in-out", // Zoom animation
-            transform: "scale(1)", // Added scale for a smoother effect
+            animation: "zoomIn 0s ease-in-out", // Remove animation delay to make it appear immediately
             color: "black",
           }}
         >
           <h1 style={{ fontSize: "32px", marginBottom: "20px" }}>
-            Do you want to join the mission?
-          </h1>{" "}
-          {/* Larger font size */}
+            Do you want to start the game?
+          </h1>
           <div style={{ marginTop: "20px" }}>
             <button
               style={{
