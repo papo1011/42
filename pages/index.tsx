@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useRouter } from "next/router"; // Import the router for navigation
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -64,7 +63,7 @@ export default function Home() {
     controls.dampingFactor = 0.1;
 
     // Create the Sun
-    const sunGeometry = new THREE.SphereGeometry(Math.log(696.34));
+    const sunGeometry = new THREE.SphereGeometry(Math.sqrt(696.34));
     const sunTexture = new THREE.TextureLoader().load("sun.jpeg");
     const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
     const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial); // Sun mesh
@@ -97,77 +96,76 @@ export default function Home() {
 
     scene.add(stars); // Add stars to the scene
 
-    // Data for the planets
     const planetsData = [
       {
         name: "Mercury",
-        size: Math.log(2.4405),
+        size: Math.sqrt(2.4405),
         texture: "mercury.png",
-        semiMajorAxis: 20,
-        semiMinorAxis: 15,
+        semiMajorAxis: Math.sqrt(57.9) * 4,
+        semiMinorAxis: Math.sqrt(55.9) * 4,
         speed: EARTH_YEAR * 4,
         rotationSpeed: 0.06,
       },
       {
         name: "Venus",
-        size: Math.log(6.0518),
+        size: Math.sqrt(6.0518),
         texture: "venus.jpeg",
-        semiMajorAxis: 35,
-        semiMinorAxis: 25,
+        semiMajorAxis: Math.sqrt(108.2) * 6,
+        semiMinorAxis: Math.sqrt(107.7) * 6,
         speed: EARTH_YEAR * 2,
         rotationSpeed: 0.003,
       },
       {
         name: "Earth",
-        size: Math.log(6.3781),
+        size: Math.sqrt(6.3781),
         texture: "earth.jpeg",
-        semiMajorAxis: 50,
-        semiMinorAxis: 40,
+        semiMajorAxis: Math.sqrt(149.6) * 8,
+        semiMinorAxis: Math.sqrt(147.7) * 8,
         speed: EARTH_YEAR,
         rotationSpeed: 0.03,
       },
       {
         name: "Mars",
-        size: Math.log(3.389),
+        size: Math.sqrt(3.389),
         texture: "mars.jpeg",
-        semiMajorAxis: 70,
-        semiMinorAxis: 55,
+        semiMajorAxis: Math.sqrt(228) * 10,
+        semiMinorAxis: Math.sqrt(222.3) * 10,
         speed: EARTH_YEAR * 0.5,
         rotationSpeed: 0.024,
       },
       {
         name: "Jupiter",
-        size: Math.log(71.492),
+        size: Math.sqrt(71.492),
         texture: "jupiter.jpeg",
-        semiMajorAxis: 100,
-        semiMinorAxis: 80,
+        semiMajorAxis: Math.sqrt(778.5) * 11,
+        semiMinorAxis: Math.sqrt(775) * 11,
         speed: EARTH_YEAR * 0.1,
         rotationSpeed: 0.09,
       },
       {
         name: "Saturn",
-        size: Math.log(60.268),
+        size: Math.sqrt(60.268),
         texture: "saturn.jpeg",
-        semiMajorAxis: 130,
-        semiMinorAxis: 105,
+        semiMajorAxis: Math.sqrt(1411.6) * 12,
+        semiMinorAxis: Math.sqrt(1399.4) * 12,
         speed: EARTH_YEAR * 0.05,
         rotationSpeed: 0.075,
       },
       {
         name: "Uranus",
-        size: Math.log(25.559),
+        size: Math.sqrt(25.559),
         texture: "uranus.jpeg",
-        semiMajorAxis: 160,
-        semiMinorAxis: 130,
+        semiMajorAxis: Math.sqrt(2867.6) * 13,
+        semiMinorAxis: Math.sqrt(2846.9) * 13,
         speed: EARTH_YEAR * 0.025,
         rotationSpeed: 0.066,
       },
       {
         name: "Neptune",
-        size: Math.log(24.764),
+        size: Math.sqrt(24.764),
         texture: "neptune.jpg",
-        semiMajorAxis: 190,
-        semiMinorAxis: 155,
+        semiMajorAxis: Math.sqrt(4465) * 14,
+        semiMinorAxis: Math.sqrt(4462.3) * 14,
         speed: EARTH_YEAR * 0.0125,
         rotationSpeed: 0.054,
       },
@@ -205,13 +203,13 @@ export default function Home() {
       // Add rings to Saturn
       if (planetData.name === "Saturn") {
         const ringGeometry1 = new THREE.RingGeometry(
-          Math.log(92) * 1.1,
-          Math.log(117.5) * 1.1,
+          Math.sqrt(92) * 1.1,
+          Math.sqrt(117.5) * 1.1,
           64,
         );
         const ringGeometry2 = new THREE.RingGeometry(
-          Math.log(122) * 1.12,
-          Math.log(137) * 1.3,
+          Math.sqrt(122) * 1.12,
+          Math.sqrt(137) * 1.3,
           64,
         );
         const ringMaterial = new THREE.MeshBasicMaterial({
@@ -236,7 +234,7 @@ export default function Home() {
 
     // Creation of the Moon around the Earth
     if (earthMesh) {
-      const moonGeometry = new THREE.SphereGeometry(Math.log(1.737));
+      const moonGeometry = new THREE.SphereGeometry(Math.sqrt(1.737));
       const moonTexture = new THREE.TextureLoader().load("moon.png");
       const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
 
@@ -246,54 +244,65 @@ export default function Home() {
       earthMoonGroup.add(earthMesh); // Earth-Moon group
       earthMoonGroup.add(moonMesh);
       solarSystem.add(earthMoonGroup);
-      moonMesh.position.set(6, 0, 0); // Initial position of the Moon
+      moonMesh.position.set(Math.sqrt(138), 0, 0); // Initial position of the Moon
     }
 
-    // Load and create asteroids with NASA API data
-    const asteroidMeshes: {
-      mesh: THREE.Mesh;
+    interface Asteroid {
       semiMajorAxis: number;
       semiMinorAxis: number;
       speed: number;
       angle: number;
-    }[] = [];
+    }
 
-    axios
-      .get("https://api.nasa.gov/neo/rest/v1/feed?api_key=DEMO_KEY") // API call to get Near-Earth objects
-      .then((response) => {
-        const asteroids = response.data.near_earth_objects;
+    // Generate 10000 asteroids
+    const numAsteroids = 10000;
 
-        Object.keys(asteroids).forEach((date) => {
-          asteroids[date].forEach(() => {
-            // Define the orbital parameters of the asteroid
-            const semiMajorAxis = THREE.MathUtils.randFloat(200, 300); // Major axis of the orbit
-            const semiMinorAxis =
-              semiMajorAxis * THREE.MathUtils.randFloat(0.8, 1.2); // Minor axis of the orbit
-            const speed = EARTH_YEAR * THREE.MathUtils.randFloat(0.1, 0.5); // Orbital speed
-            const angle = Math.random() * Math.PI * 2; // Random initial angle
+    // Declare the asteroidData array with the defined interface
+    const asteroidData: Asteroid[] = [];
 
-            // Creation of the asteroid mesh
-            const asteroidGeometry = new THREE.SphereGeometry(0.5, 12, 12); // Asteroids are much smaller
-            const asteroidMaterial = new THREE.MeshBasicMaterial({
-              color: 0xaaaaaa,
-            });
-            const asteroidMesh = new THREE.Mesh(
-              asteroidGeometry,
-              asteroidMaterial,
-            );
+    const positions = new Float32Array(numAsteroids * 3); // x, y, z for each asteroid
 
-            asteroidMeshes.push({
-              mesh: asteroidMesh,
-              semiMajorAxis,
-              semiMinorAxis,
-              speed,
-              angle,
-            });
-            scene.add(asteroidMesh); // Add the asteroid to the scene
-          });
-        });
-      })
-      .catch((error) => console.error("Error retrieving asteroids:", error));
+    for (let i = 0; i < numAsteroids; i++) {
+      // Define the orbital parameters of the asteroid
+      const semiMajorAxis = THREE.MathUtils.randFloat(
+        Math.sqrt(313) * 10.5,
+        Math.sqrt(493) * 10.5,
+      ); // Major axis of the orbit
+      const semiMinorAxis =
+        semiMajorAxis * THREE.MathUtils.randFloat(0.95, 1.05); // Minor axis of the orbit
+      const speed = EARTH_YEAR * THREE.MathUtils.randFloat(0.1, 0.5); // Orbital speed
+      const angle = Math.random() * Math.PI * 2; // Random initial angle
+
+      // Store the asteroid data
+      asteroidData.push({
+        semiMajorAxis,
+        semiMinorAxis,
+        speed,
+        angle,
+      });
+
+      // Initial positions
+      positions[i * 3] = semiMajorAxis * Math.cos(angle); // x
+      positions[i * 3 + 1] = Math.random() * Math.PI * 2; // y
+      positions[i * 3 + 2] = semiMinorAxis * Math.sin(angle); // z
+    }
+
+    // Create the material for the points
+    const asteroidMaterial = new THREE.PointsMaterial({
+      color: 0xaaaaaa,
+      size: 0.5, // Size of each point
+    });
+
+    // Create the points geometry
+    const asteroidGeometry = new THREE.BufferGeometry();
+
+    asteroidGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3),
+    );
+    const asteroidPoints = new THREE.Points(asteroidGeometry, asteroidMaterial);
+
+    scene.add(asteroidPoints); // Add the points to the scene
 
     // Animation function
     const animate = () => {
@@ -313,7 +322,7 @@ export default function Home() {
       // Update the orbit of the Moon around the Earth
       if (moonMesh && earthMesh) {
         moonAngle += MOON_ORBIT_SPEED;
-        const moonDistance = 6; // Distance of the Moon from the Earth
+        const moonDistance = Math.sqrt(138); // Distance of the Moon from the Earth
 
         moonMesh.position.x =
           earthMesh.position.x + moonDistance * Math.cos(moonAngle);
@@ -321,14 +330,21 @@ export default function Home() {
           earthMesh.position.z + moonDistance * Math.sin(moonAngle);
       }
 
-      // Update the orbits of the asteroids
-      asteroidMeshes.forEach((asteroid) => {
-        asteroid.angle += asteroid.speed;
-        asteroid.mesh.position.x =
-          asteroid.semiMajorAxis * Math.cos(asteroid.angle);
-        asteroid.mesh.position.z =
-          asteroid.semiMinorAxis * Math.sin(asteroid.angle);
-      });
+      // Update the positions of the asteroids
+      for (let i = 0; i < numAsteroids; i++) {
+        const asteroid = asteroidData[i];
+
+        asteroid.angle += asteroid.speed; // Update angle
+        positions[i * 3] = asteroid.semiMajorAxis * Math.cos(asteroid.angle); // Update x
+        positions[i * 3 + 2] =
+          asteroid.semiMinorAxis * Math.sin(asteroid.angle); // Update z
+      }
+
+      // Update the geometry with new positions
+      asteroidGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3),
+      );
 
       controls.update(); // Update the camera controls
       renderer.render(scene, camera); // Render the scene
